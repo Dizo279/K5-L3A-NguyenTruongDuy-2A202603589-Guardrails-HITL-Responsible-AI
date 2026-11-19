@@ -1,7 +1,7 @@
 """
 Lab 11 — Helper Utilities
 """
-from core.config import get_llm_provider, PROVIDER_OPENROUTER  # noqa: F401
+from core.config import get_llm_provider, PROVIDER_LIQUID  # noqa: F401
 from core.openai_runtime import OpenAIRunner
 
 
@@ -11,7 +11,7 @@ async def chat_with_agent(agent, runner, user_message: str, session_id=None):
     Works with OpenAIRunner (OpenAI Red / OpenRouter Blue) and Google ADK (Gemini Red).
     """
     provider = getattr(runner, "provider", None)
-    if isinstance(runner, OpenAIRunner) or provider in ("openrouter", "openai"):
+    if isinstance(runner, OpenAIRunner) or provider in ("liquid", "openai"):
         text = await runner.chat(agent, user_message)
         return text, None
 
