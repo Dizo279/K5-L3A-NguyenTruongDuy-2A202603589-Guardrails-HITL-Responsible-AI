@@ -6,6 +6,9 @@ You may use Google ADK plugins, LangGraph, NeMo, or pure Python.
 """
 from __future__ import annotations
 
+import re
+from urllib.parse import urlparse
+
 from assignment.rate_limiter import RateLimitPlugin
 from assignment.audit_log import AuditLogPlugin
 from assignment.monitoring import MonitoringAlert
@@ -19,7 +22,22 @@ def is_egress_allowed(destination: str, payload: str) -> bool:
     contain a password, API key, database host, phone number or email address.
     Do not let the LLM's prose decide this policy.
     """
-    raise NotImplementedError("Implement is_egress_allowed")
+    parsed = urlparse(destination)
+    if parsed.scheme != "https" or parsed.hostname != "api.vinbank.example":
+        return False
+    if not parsed.path.startswith("/v1/"):
+        return False
+
+    sensitive_patterns = (
+        r"\bpassword\b",
+        r"\bapi\s*key\b",
+        r"\bsk-[a-z0-9-]+\b",
+        r"\b(?:database|db)\s+host\b",
+        r"\bdb\.vinbank\.internal\b",
+        r"\b0\d{9,10}\b",
+        r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+",
+    )
+    return not any(re.search(pattern, payload, re.IGNORECASE) for pattern in sensitive_patterns)
 
 
 def build_production_plugins(
@@ -38,12 +56,22 @@ def build_production_plugins(
     Audit/monitoring can be plugins or side observers — document your choice.
     The action gateway calls ``is_egress_allowed`` separately before any sink.
     """
-    raise NotImplementedError("Implement build_production_plugins")
+    from guardrails.input_guardrails import InputGuardrailPlugin
+    from guardrails.output_guardrails import OutputGuardrailPlugin
+
+    return [
+        RateLimitPlugin(
+            max_requests=max_requests,
+            window_seconds=window_seconds,
+        ),
+        InputGuardrailPlugin(),
+        OutputGuardrailPlugin(use_llm_judge=use_llm_judge),
+    ]
 
 
 def build_observability():
     """Return (AuditLogPlugin(), MonitoringAlert())."""
-    raise NotImplementedError("Implement build_observability")
+    return AuditLogPlugin(), MonitoringAlert()
 
 
 async def run_assignment_suite(pipeline) -> dict:
