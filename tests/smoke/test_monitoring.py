@@ -52,7 +52,6 @@ def test_monitoring_does_not_alert_at_or_below_threshold_and_exports():
     finally:
         output.unlink(missing_ok=True)
         output.parent.rmdir()
-        output.parent.parent.rmdir()
 
 
 def test_monitoring_empty_snapshot_has_zero_rates():

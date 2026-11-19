@@ -48,5 +48,4 @@ def test_audit_log_exports_json_and_creates_parent_directory():
     finally:
         output.unlink(missing_ok=True)
         output.parent.rmdir()
-        output.parent.parent.rmdir()
 
